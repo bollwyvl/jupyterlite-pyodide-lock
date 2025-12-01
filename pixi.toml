@@ -354,6 +354,7 @@ cmd = """export JLPL_GIT_DESCRIBE=0
 depends-on = ["build-pypi-core", "build-pypi-wd"]
 description = "├ build for conda distribution"
 inputs = ["dist/*.tar.gz", "recipe"]
+outputs = ["dist/*/*.conda"]
 
 [feature.tasks-build.tasks.build-wheel-twine]
 cmd = "twine check --strict dist/*.whl dist/*.tar.gz"
