@@ -103,7 +103,7 @@ predictable baseline `pyodide` runtime environment, or ensure complex dependenci
 - make a `requirements.txt`
 
   ```text
-  jupyterlite-core ==0.7.0
+  jupyterlite-core ==0.7.1
   jupyterlite-pyodide-kernel ==0.7.0
   jupyterlite-pyodide-lock ==0.2.0
   jupyterlite-pyodide-lock-uv ==0.2.0
@@ -170,7 +170,7 @@ predictable baseline `pyodide` runtime environment, or ensure complex dependenci
     - nodefaults
   dependencies:
     - ipywidgets ==8.1.8
-    - jupyterlite-core ==0.7.0
+    - jupyterlite-core ==0.7.1
     - jupyterlite-pyodide-kernel ==0.7.0
     - jupyterlite-pyodide-lock-recommended ==0.2.0
   ```

@@ -703,7 +703,7 @@ notebook = "*"
 
 [feature.deps-demo-voici]
 channels = ["conda-forge/label/voici_alpha"]
-dependencies.voici_core = ">=0.10.0a0"
+dependencies.voici_core = {version = ">=0.10.0a2", channel = "conda-forge/label/voici_alpha"}
 
 # environments #################################################################
 [environments]

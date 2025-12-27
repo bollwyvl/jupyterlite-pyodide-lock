@@ -45,7 +45,8 @@ def warehouse_date_to_epoch(iso8601_str: str) -> int:
     for format_str in formats:
         try:
             return int(
-                datetime.strptime(iso8601_str, format_str)
+                datetime
+                .strptime(iso8601_str, format_str)
                 .replace(tzinfo=timezone.utc)
                 .timestamp()
             )

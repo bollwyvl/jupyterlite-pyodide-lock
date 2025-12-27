@@ -51,12 +51,15 @@ class UvLocker(BaseLocker):
     uv_platform: str = Unicode(
         "wasm32-pyodide2024", help="the ``uv`` python platform"
     ).tag(config=True)
-    uv_pip_compile_args = TypedTuple(
+    uv_pip_compile_args: tuple[str] = TypedTuple(
         Unicode(),
         default_value=["--format=pylock.toml", "--no-build"],
         help="arguments to ``uv pip compile``",
     ).tag(config=True)
-    extra_uv_pip_compile_args = TypedTuple(
+    uv_python_version: str = Unicode(
+        allow_none=True, help="the ``uv`` python version"
+    ).tag(config=True)
+    extra_uv_pip_compile_args: tuple[str] = TypedTuple(
         Unicode(),
         help=("extra arguments to ``uv pip compile``, such as ``--default-index``"),
     ).tag(config=True)
@@ -64,7 +67,15 @@ class UvLocker(BaseLocker):
     # trait defaults
     @default("uv_bin")
     def _default_uv_bin(self) -> str:
-        return find_binary(["uv"])[0]
+        return f"""{find_binary(["uv"])[0]}"""
+
+    @default("uv_python_version")
+    def _default_uv_python_version(self) -> str | None:
+        lockfile = self.parent.pyodide_addon.output_pyodide / PYODIDE_LOCK
+        if lockfile.exists():
+            lock = json.loads(lockfile.read_text(**UTF8))
+            return f"""{lock["info"]["python"]}"""
+        return None
 
     # locker API
     async def resolve(self) -> bool:
@@ -295,6 +306,7 @@ class UvLocker(BaseLocker):
     @property
     def all_uv_pip_compile_args(self) -> list[str]:
         """All args for ``uv pip compile``."""
+        py_ver = self.uv_python_version
         args = [
             self.uv_bin,
             "pip",
@@ -302,6 +314,7 @@ class UvLocker(BaseLocker):
             f"--python-platform={self.uv_platform}",
             f"--output-file={self.pylock}",
             f"--constraints={self.constraints_txt}",
+            *([] if not py_ver else [f"--python-version={py_ver}"]),
             *self.uv_pip_compile_args,
             *self.extra_uv_pip_compile_args,
         ]

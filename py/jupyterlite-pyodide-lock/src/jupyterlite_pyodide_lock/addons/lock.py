@@ -195,9 +195,9 @@ class PyodideLockAddon(BaseAddon):
 
             if self.lock_date_epoch:
                 lde_ts = datetime.fromtimestamp(self.lock_date_epoch, tz=timezone.utc)
+                lde_wh = lde_ts.strftime(WAREHOUSE_UPLOAD_FORMAT)
                 lines += [
-                    """              """
-                    f"""(iso8601: {lde_ts.strftime(WAREHOUSE_UPLOAD_FORMAT)})""",
+                    f"""lock date:    (iso8601: {lde_wh})""",
                 ]
 
             if self.enabled:
