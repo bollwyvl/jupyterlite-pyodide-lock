@@ -55,17 +55,17 @@ class UvLocker(BaseLocker):
         Unicode(),
         default_value=["--format=pylock.toml", "--no-build"],
         help="arguments to ``uv pip compile``",
-    ).tag(config=True)  # type: ignore[assignment]
+    ).tag(config=True)
     uv_python_version: str = Unicode(
         allow_none=True, help="the ``uv`` python version"
     ).tag(config=True)  # type: ignore[assignment]
     exclude_specs: tuple[str] = TypedTuple(
-        Unicode(), help=("PEP-508 specs to exclude from locking")
-    ).tag(config=True)  # type: ignore[assignment]
+        Unicode(), help="PEP-508 specs to exclude from lockfile resolution"
+    ).tag(config=True)
     extra_uv_pip_compile_args: tuple[str] = TypedTuple(
         Unicode(),
-        help=("extra arguments to ``uv pip compile``, such as ``--default-index``"),
-    ).tag(config=True)  # type: ignore[assignment]
+        help="extra arguments to ``uv pip compile``, such as ``--default-index``",
+    ).tag(config=True)
 
     # trait defaults
     @default("uv_bin")

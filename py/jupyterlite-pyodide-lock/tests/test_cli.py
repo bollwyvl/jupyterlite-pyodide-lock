@@ -147,3 +147,29 @@ def test_cli_lock_date_epoch(
         PyodideLockAddon=dict(lock_date_epoch=a_bad_widget_lock_date_epoch),
     )
     lite_cli("build", "--debug", expect_rc=1)
+
+
+def test_cli_patches(lite_cli: LiteRunner, a_lite_config: Path) -> None:
+    """Verify patch behavior."""
+    from jupyterlite_pyodide_lock.constants import PYODIDE_LOCK_STEM
+
+    wnbe = "widgetsnbextension"
+    ipyw = "ipywidgets"
+
+    patch_config(
+        a_lite_config,
+        PyodideLockAddon={
+            "specs": [ipyw],
+            "patch_lock_fragment": {"packages": {wnbe: None}},
+            "package_depends_remove": {ipyw: [wnbe]},
+        },
+    )
+    out = a_lite_config.parent / "_output"
+    lite_cli("build", "--debug")
+    lock_dir = out / "static" / PYODIDE_LOCK_STEM
+    lock = lock_dir / PYODIDE_LOCK
+    lock_text = lock.read_text(**UTF8)
+    lock_json = json.loads(lock_text)
+    packages = lock_json["packages"]
+    assert wnbe not in packages
+    assert wnbe not in packages[ipyw]["depends"]
