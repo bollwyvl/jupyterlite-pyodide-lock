@@ -2,8 +2,7 @@
   "LiteBuildConfig": {
     "cache_dir": "../build/.cache/lite",
     "output_dir": "../build/docs-app",
-    "apps": ["consoles", "edit", "tree", "lab", "notebooks", "repl", "voici"],
-    "strict": true
+    "apps": ["consoles", "edit", "tree", "lab", "notebooks", "repl", "voici"]
   },
   "PyodideLockAddon": {
     "enabled": true,

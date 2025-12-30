@@ -3,4 +3,4 @@ channels:
   - nodefaults
 
 dependencies:
-  - pixi ==0.59.0
+  - pixi ==0.61.0

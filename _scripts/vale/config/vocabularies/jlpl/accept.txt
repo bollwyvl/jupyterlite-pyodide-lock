@@ -41,6 +41,8 @@ discoverable
 emscripten
 endmacro
 entrypoints
+exclude_specs
+excludes_txt
 ExtraMimeFiles
 feedstock
 fetch_url

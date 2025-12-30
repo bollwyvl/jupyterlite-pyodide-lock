@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import pkginfo
 from doit.tools import config_changed
-from jupyterlite_core.constants import JUPYTERLITE_JSON, LAB_EXTENSIONS, UTF8
+from jupyterlite_core.constants import JSON_FMT, JUPYTERLITE_JSON, LAB_EXTENSIONS, UTF8
 from jupyterlite_core.trait_types import TypedTuple
 from jupyterlite_pyodide_kernel.constants import (
     ALL_WHL,
@@ -25,7 +25,7 @@ from jupyterlite_pyodide_kernel.constants import (
     PKG_JSON_WHEELDIR,
     PYODIDE_LOCK,
 )
-from traitlets import CInt, Enum, Unicode, default
+from traitlets import CInt, Dict, Enum, Unicode, default
 
 from jupyterlite_pyodide_lock import __version__
 from jupyterlite_pyodide_lock.addons._base import BaseAddon
@@ -38,7 +38,7 @@ from jupyterlite_pyodide_lock.constants import (
     WAREHOUSE_UPLOAD_FORMAT,
 )
 from jupyterlite_pyodide_lock.lockers import get_locker_entry_points
-from jupyterlite_pyodide_lock.utils import url_wheel_filename
+from jupyterlite_pyodide_lock.utils import patch_dict, url_wheel_filename
 
 if TYPE_CHECKING:
     from importlib.metadata import EntryPoint
@@ -167,6 +167,30 @@ class PyodideLockAddon(BaseAddon):
         ),
     ).tag(config=True)  # type: ignore[assignment]
 
+    patch_lock_fragment: dict[str, Any] = Dict(
+        help=(
+            "``pyodide-lock.json`` fragment to recursively replace in the output"
+            " lockfile; setting a key's value to ``None`` will remove it"
+        )
+    ).tag(config=True)  # type: ignore[assignment]
+
+    package_depends_remove: dict[str, list[str]] = Dict(
+        help=(
+            "dependencies to remove in the output lockfile, keyed by the package"
+            " the package name of the dependent; does not patch any ``import``"
+            " in the underlying python"
+        )
+    ).tag(config=True)  # type: ignore[assignment]
+
+    package_depends_add: dict[str, list[str]] = Dict(
+        help=(
+            "dependencies to add to a package in the output lockfile, keyed by"
+            " the package name; all dependencies must still appear in ``specs``,"
+            " ``packages``, or otherwise already be included in the lockfile "
+            " resolution"
+        )
+    ).tag(config=True)  # type: ignore[assignment]
+
     # JupyterLite API methods
     def pre_status(self, manager: LiteManager) -> TTaskGenerator:
         """Patch configuration of ``PyodideAddon`` if needed."""
@@ -268,12 +292,18 @@ class PyodideLockAddon(BaseAddon):
             lock date:              {self.lock_date_epoch}
             locker:                 {self.locker}
             locker_config:          {self.locker_config}
+            patches:                {self.patch_lock_fragment}
+            add_deps:               {self.package_depends_add}
+            remove_deps:            {self.package_depends_remove}
         """
 
         yield self.task(
             name="lock",
             uptodate=[config_changed(config_str)],
-            actions=[(self.lock, [], args)],
+            actions=[
+                (self.lock, [], args),
+                self.patch_lock,
+            ],
             file_dep=[  # type: ignore[misc]
                 *args["packages"],
                 *lock_dep_wheels,
@@ -331,6 +361,24 @@ class PyodideLockAddon(BaseAddon):
         locker.resolve_sync()
 
         return self.lockfile.exists()
+
+    def patch_lock(self) -> bool | None:
+        """Apply configured patches to the output lockfile."""
+        old_lock_text = self.lockfile.read_text(**UTF8).strip()
+        lock = dict(json.loads(old_lock_text))
+        patch_dict(lock, self.patch_lock_fragment)
+        for name, pkg in lock["packages"].items():
+            add_deps = {*self.package_depends_add.get(name, [])}
+            remove_deps = {*self.package_depends_remove.get(name, [])}
+            depends = {*pkg["depends"]}
+            new_depends = (depends | add_deps) - remove_deps
+            pkg["depends"] = sorted(new_depends)
+        new_lock_text = json.dumps(lock, **JSON_FMT).strip()
+        if new_lock_text == old_lock_text:
+            self.log.info("[patch] no change from patches")
+            return None
+        self.lockfile.write_text(new_lock_text, **UTF8)
+        return True
 
     # traitlets
     @default("lock_date_epoch")

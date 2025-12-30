@@ -35,7 +35,7 @@ This project is developed locally and in CI with [pixi], a relatively new approa
 If using `mamba` or `conda` (or some other `$CONDA_EXE`):
 
 ```bash
-mamba install -c conda-forge "pixi ==0.59.0"  # replace `mamba` with your CONDA_EXE
+mamba install -c conda-forge "pixi ==0.61.0"  # replace `mamba` with your CONDA_EXE
 ```
 
 <details><summary><i>Why <code>pixi</code>?</i></summary>

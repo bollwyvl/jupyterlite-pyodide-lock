@@ -47,22 +47,25 @@ if TYPE_CHECKING:
 class UvLocker(BaseLocker):
     """A locker that uses ``uv pip compile``."""
 
-    uv_bin: str = Unicode(help="a custom executable for ``uv``").tag(config=True)
+    uv_bin: str = Unicode(help="a custom executable for ``uv``").tag(config=True)  # type: ignore[assignment]
     uv_platform: str = Unicode(
         "wasm32-pyodide2024", help="the ``uv`` python platform"
-    ).tag(config=True)
+    ).tag(config=True)  # type: ignore[assignment]
     uv_pip_compile_args: tuple[str] = TypedTuple(
         Unicode(),
         default_value=["--format=pylock.toml", "--no-build"],
         help="arguments to ``uv pip compile``",
-    ).tag(config=True)
+    ).tag(config=True)  # type: ignore[assignment]
     uv_python_version: str = Unicode(
         allow_none=True, help="the ``uv`` python version"
-    ).tag(config=True)
+    ).tag(config=True)  # type: ignore[assignment]
+    exclude_specs: tuple[str] = TypedTuple(
+        Unicode(), help=("PEP-508 specs to exclude from locking")
+    ).tag(config=True)  # type: ignore[assignment]
     extra_uv_pip_compile_args: tuple[str] = TypedTuple(
         Unicode(),
         help=("extra arguments to ``uv pip compile``, such as ``--default-index``"),
-    ).tag(config=True)
+    ).tag(config=True)  # type: ignore[assignment]
 
     # trait defaults
     @default("uv_bin")
@@ -83,9 +86,10 @@ class UvLocker(BaseLocker):
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         reqs = self.build_requirements_txt()
         self.build_constraints_txt(reqs)
-        self.run_pip_compile()
-        self.build_pyodide_lock()
-        return True
+        self.build_excludes_txt()
+        if not self.run_pip_compile():
+            return False
+        return self.build_pyodide_lock()
 
     def build_requirements_txt(self) -> dict[str, str]:
         """Combine all requirements."""
@@ -122,6 +126,10 @@ class UvLocker(BaseLocker):
             "\n".join(sorted(package_specs.values())), **UTF8
         )
 
+    def build_excludes_txt(self) -> None:
+        """Build an excludes file."""
+        self.excludes_txt.write_text("\n".join(sorted(self.exclude_specs)), **UTF8)
+
     def build_one_constraint_from_pyodide_lock(
         self, pkg: PackageSpec, requirements: dict[str, str]
     ) -> dict[str, str]:
@@ -150,7 +158,7 @@ class UvLocker(BaseLocker):
             ])
         return {name: spec}
 
-    def run_pip_compile(self) -> None:
+    def run_pip_compile(self) -> bool:
         """Run a constrained ``uv pip compile``."""
         args = [*self.all_uv_pip_compile_args]
         self.log.debug("[uv] [compile] %s", "\t".join(args))
@@ -158,8 +166,10 @@ class UvLocker(BaseLocker):
         out = proc.communicate()
         if proc.returncode != 0:
             self.log.error("[uv] [compile] error %s: %s", proc.returncode, out)
+            return False
+        return True
 
-    def build_pyodide_lock(self) -> None:
+    def build_pyodide_lock(self) -> bool:
         """Update ``{out_dir}/pyodide-lock/pyodide-lock.json`` from wheels."""
         lockfile = self.parent.lockfile
         lock_dir = lockfile.parent
@@ -184,6 +194,7 @@ class UvLocker(BaseLocker):
             self.fix_one_tmp_pyodide_lock_package(root_path, lock_dir, package, found)
 
         lockfile.write_text(json.dumps(lock_json, **JSON_FMT), **UTF8)
+        return True
 
     def build_tmp_pyodide_lock(
         self, old_lockfile: Path, wheels: list[Path]
@@ -198,7 +209,9 @@ class UvLocker(BaseLocker):
                 for path in sorted(set(wheels))
             ]
             spec = PyodideLockSpec.from_json(tdp / PYODIDE_LOCK)
-            spec = add_wheels_to_spec(spec, [*tdp.glob("*.whl")])
+            spec = add_wheels_to_spec(
+                spec, [*tdp.glob("*.whl")], ignore_missing_dependencies=True
+            )
             spec.to_json(tmp_lock)
             return {**json.loads(tmp_lock.read_text(**UTF8))}
 
@@ -299,6 +312,11 @@ class UvLocker(BaseLocker):
         return Path(self.cache_dir / "constraints.txt")
 
     @property
+    def excludes_txt(self) -> Path:
+        """A temporary ``excludes.txt``."""
+        return Path(self.cache_dir / "excludes.txt")
+
+    @property
     def lockfile_cache(self) -> Path:
         """The location of the updated lockfile."""
         return Path(self.cache_dir / PYODIDE_LOCK)
@@ -314,6 +332,7 @@ class UvLocker(BaseLocker):
             f"--python-platform={self.uv_platform}",
             f"--output-file={self.pylock}",
             f"--constraints={self.constraints_txt}",
+            f"--excludes={self.excludes_txt}",
             *([] if not py_ver else [f"--python-version={py_ver}"]),
             *self.uv_pip_compile_args,
             *self.extra_uv_pip_compile_args,

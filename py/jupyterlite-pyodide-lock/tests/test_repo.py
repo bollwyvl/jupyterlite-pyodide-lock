@@ -21,8 +21,8 @@ if not PXT.exists():
     pytest.skip("Not in a jupyterlite-pyodide-lock checkout", allow_module_level=True)
 
 PIXI_PATTERNS = {
-    ".github/workflows/test.yml": [r"JLPL_PIXI_VERSION: ([^\s]+)"],
-    ".github/workflows/pages.yml": [r"JLPL_PIXI_VERSION: ([^\s]+)"],
+    ".github/workflows/test.yml": [r"JLPL_PIXI_VERSION: &pixi_version ([^\s]+)"],
+    ".github/workflows/pages.yml": [r"JLPL_PIXI_VERSION: &pixi_version ([^\s]+)"],
     "docs/environment.yml": [r"""pixi ==([^\s"']+)"""],
     "CONTRIBUTING.md": [r"""pixi ==([^\s"']+)"""],
 }

@@ -11,6 +11,7 @@ import socket
 from datetime import datetime, timezone
 from logging import Logger, getLogger
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlparse
 
 from psutil import NoSuchProcess, Process, wait_procs
@@ -208,3 +209,15 @@ def url_wheel_filename(url_or_name: str) -> str | None:
     if parsed.path.endswith(".whl"):
         return parsed.path.split("/")[-1]
     return None
+
+
+def patch_dict(original: dict[str, Any], patch: dict[str, Any]) -> None:
+    """Recursively replace update a dict with patched values, removing ``None``."""
+    for k, v in patch.items():
+        if v is None:
+            original.pop(k, None)
+        elif isinstance(v, dict):
+            patch_dict(original[k], v)
+            continue
+        else:
+            original[k] = v
