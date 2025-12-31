@@ -700,10 +700,7 @@ watchfiles = "*"
 ipywidgets = ">=8.1,<8.2"
 jupyterlab = ">=4.1,<4.6"
 notebook = "*"
-
-[feature.deps-demo-voici]
-channels = ["conda-forge/label/voici_alpha"]
-dependencies.voici_core = {version = ">=0.10.0a2", channel = "conda-forge/label/voici_alpha"}
+voici_core = ">=0.10.0"
 
 # environments #################################################################
 [environments]
@@ -725,7 +722,6 @@ docs = {features = [
   "deps-build",
   "deps-check",
   "deps-demo",
-  "deps-demo-voici",
   "deps-docs",
   "deps-flit",
   "deps-run",
