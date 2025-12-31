@@ -23,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
   "jupyterlite-pyodide-lock ==0.2.0",
-  "uv >=0.9",
+  "uv >=0.9.9",
 ]
 description = "A uv strategy for jupyterlite-pyodide-lock"
 license = "BSD-3-Clause"

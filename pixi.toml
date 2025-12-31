@@ -621,7 +621,7 @@ deps--oldest.solve-strategy = "lowest-direct"
 # singletons
 deps-flit.dependencies.flit-core = ">=3.12,<4.0"
 deps-rattler.dependencies.rattler-build = "*"
-deps-run-uv.dependencies.python-uv = ">=0.9"
+deps-run-uv.dependencies.python-uv = ">=0.9.9"
 deps-run-wd.dependencies.selenium = ">=4.19"
 deps-uv.dependencies.uv = "*"
 

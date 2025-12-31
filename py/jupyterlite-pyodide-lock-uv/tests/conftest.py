@@ -537,11 +537,11 @@ def expect_no_diff(left_text: str, right_text: str, left: str, right: str) -> No
 @pytest.fixture
 def a_lite_config(a_lite_dir: Path) -> Path:
     """Provide a configured ``jupyter_lite_config.json``."""
-    config = a_lite_dir / JUPYTER_LITE_CONFIG
+    config = Path(a_lite_dir / JUPYTER_LITE_CONFIG)
 
     patch_config(
         config,
-        PyodideLockAddon=dict(enabled=True, locker="UvLocker"),
+        PyodideLockAddon={"enabled": True, "locker": "UvLocker"},
         **LITE_BUILD_CONFIG,
     )
 
