@@ -78,7 +78,7 @@ test = {cmd = "echo 🚀 OK test", description = """
 test-cli = {cmd = "echo 🚗 OK cli", description = """
 ├ 🆘 check CLI in all test environments""", depends-on = [
   "test-min-cli",
-  "test-min-uv-cli",
+  "test-uv-min-cli",
   "test-max-cli",
 ]}
 test-max = {cmd = "echo 🚗 OK test-max", description = """
@@ -463,15 +463,15 @@ test-min-wd = {description = "├─ test webdriver in the min test environment"
 ]}
 
 [feature.tasks-test-uv-min.tasks]
-test-min-uv-cli = {description = "├─ smoke test browsers in min uv test environment", depends-on = [
-  "test-min-uv-pip",
-  {task = "_cli_check", args = ["test-min"]},
+test-uv-min-cli = {description = "├─ smoke test browsers in min uv test environment", depends-on = [
+  "test-uv-min-pip",
+  {task = "_cli_check", args = ["test-uv-min"]},
 ]}
-test-min-uv-pip = {description = "├─ prepare the min uv test environment with pip", depends-on = [
+test-uv-min-pip = {description = "├─ prepare the min uv test environment with pip", depends-on = [
   {task = "_pip_whl", args = ["test-uv-min", "jupyterlite-pyodide-lock jupyterlite-pyodide-lock-uv"]},
 ]}
 test-uv-min-uv = {description = "├─ test uv in the min uv test environment", depends-on = [
-  "test-min-uv-cli",
+  "test-uv-min-cli",
   {task = "_pytest_uv", args = ["test-uv-min"]},
 ]}
 
