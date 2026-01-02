@@ -17,10 +17,15 @@ env:
   FORCE_COLOR: 1
   JLPL_TIMEOUT: 300
   JLPL_PIXI_VERSION: &pixi_version v0.61.0
+  _JLPL_VM_LINUX_MIN: &vm_linux_min ubuntu-22.04
+  _JLPL_VM_WIN: &vm_win windows-2025
+  _JLPL_VM_WIN_MIN: &vm_win_min ubuntu-22.04
+  _JLPL_VM_OSX: &vm_osx macos-15
+  _JLPL_VM_OSX_MIN: &vm_osx_min macos-15-intel
 
 jobs:
   build-pypi:
-    runs-on: ubuntu-24.04
+    runs-on: &vm_linux ubuntu-24.04
     steps:
       - uses: &uses_checkout actions/checkout@v6
       - uses: &uses_setup_pixi prefix-dev/setup-pixi@v0.9.3
@@ -42,7 +47,7 @@ jobs:
           path: .pixi/task-cache-v0
 
   build-conda:
-    runs-on: ubuntu-24.04
+    runs-on: *vm_linux
     needs: [build-pypi]
     steps:
       - uses: *uses_checkout
@@ -58,7 +63,7 @@ jobs:
           path: dist
 
   lint:
-    runs-on: ubuntu-24.04
+    runs-on: *vm_linux
     steps:
       - uses: *uses_checkout
       - uses: *uses_setup_pixi
@@ -76,15 +81,20 @@ jobs:
         test-env: [min, max]
         os: [linux, osx, win]
         pkg: [core, uv, wd]
+        exclude:
+          - { test-env: min, pkg: uv }
         include:
           # see https://github.com/actions/runner-images#available-images
-          - { test-env: max, os: osx, vm: macos-15, browser: chrome }
-          - { test-env: max, os: linux, vm: ubuntu-24.04, browser: chromium }
-          - { test-env: max, os: linux, vm: ubuntu-24.04, browser: firefox }
-          - { test-env: max, os: win, vm: windows-2025, browser: chrome }
-          - { test-env: min, os: osx, vm: macos-15-intel, browser: chrome }
-          - { test-env: min, os: linux, vm: ubuntu-22.04, browser: firefox }
-          - { test-env: min, os: win, vm: windows-2022, browser: firefox }
+          - { test-env: max, os: osx, vm: *vm_osx, browser: chrome }
+          - { test-env: max, os: linux, vm: *vm_linux, browser: chromium }
+          - { test-env: max, os: linux, vm: *vm_linux, browser: firefox }
+          - { test-env: max, os: win, vm: *vm_win, browser: chrome }
+          - { test-env: min, os: osx, vm: *vm_osx_min, browser: chrome }
+          - { test-env: min, os: linux, vm: *vm_linux_min, browser: firefox }
+          - { test-env: min, os: win, vm: *vm_win_min, browser: firefox }
+          - { test-env: uv-min, os: linux, vm: *vm_linux_min, pkg: uv }
+          - { test-env: uv-min, os: win, vm: *vm_win_min, pkg: uv }
+          - { test-env: uv-min, os: osx, vm: *vm_osx_min, pkg: uv }
     env:
       JLPL_BROWSER: ${{ matrix.browser }}
     steps:

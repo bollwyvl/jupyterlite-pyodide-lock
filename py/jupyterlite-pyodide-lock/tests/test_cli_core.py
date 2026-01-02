@@ -159,7 +159,7 @@ def test_cli_patches(lite_cli: LiteRunner, a_lite_config: Path) -> None:
     patch_config(
         a_lite_config,
         PyodideLockAddon={
-            "specs": [ipyw],
+            "specs": [f"{ipyw} <8.1"],
             "patch_lock_fragment": {"packages": {wnbe: None}},
             "package_depends_remove": {ipyw: [wnbe]},
         },

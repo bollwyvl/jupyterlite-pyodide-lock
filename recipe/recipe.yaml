@@ -41,8 +41,8 @@ outputs:
         - python ${{ python_min }}.*
       run:
         - python >=${{ python_min }}
-        - jupyterlite-core >=0.3.0,<0.8.0
-        - jupyterlite-pyodide-kernel >=0.3.1,<0.8.0
+        - jupyterlite-core >=0.6.0,<0.8.0
+        - jupyterlite-pyodide-kernel >=0.6.0,<0.8.0
         - psutil >=6
         - pyodide-lock-with-wheel >=0.1.0a4,<0.2.0
         - tornado >=6.1.0
@@ -106,6 +106,9 @@ outputs:
         - ${{ pin_subpackage(jlpl, exact=True) }}
         - python >=${{ python_min }}
         - python-uv >=0.9.9
+      run_constraints:
+        - jupyterlite-pyodide-kernel >=0.7.0
+        - pyodide-lock >=0.1.0a6
     tests:
       - python:
           imports: ${{ jlpl_m }}_uv

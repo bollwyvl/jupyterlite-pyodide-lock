@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import functools
+import importlib.metadata
 import json
 import operator
 import os
@@ -210,11 +211,14 @@ class PyodideLockAddon(BaseAddon):
         def _status() -> None:
             from textwrap import indent
 
+            plock_version = importlib.metadata.version(PYODIDE_LOCK_STEM)
+
             lines = [
                 f"""enabled:      {self.enabled}""",
                 f"""all lockers:  {", ".join(LOCKERS.keys())}""",
                 f"""lock date:    {self.lock_date_epoch}""",
                 f"""version:      {__version__}""",
+                f"""pyodide-lock: {plock_version}""",
             ]
 
             if self.lock_date_epoch:

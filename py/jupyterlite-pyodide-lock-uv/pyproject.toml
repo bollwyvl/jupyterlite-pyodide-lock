@@ -22,7 +22,9 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
+  "jupyterlite-pyodide-kernel >=0.7.0",
   "jupyterlite-pyodide-lock ==0.2.0",
+  "pyodide-lock >=0.1.0a6",
   "uv >=0.9.9",
 ]
 description = "A uv strategy for jupyterlite-pyodide-lock"

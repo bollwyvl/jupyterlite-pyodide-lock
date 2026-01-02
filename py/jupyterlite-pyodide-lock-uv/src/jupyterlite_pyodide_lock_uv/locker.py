@@ -48,7 +48,7 @@ class UvLocker(BaseLocker):
     """A locker that uses ``uv pip compile``."""
 
     uv_bin: str = Unicode(help="a custom executable for ``uv``").tag(config=True)  # type: ignore[assignment]
-    uv_platform: str = Unicode(
+    uv_python_platform: str = Unicode(
         "wasm32-pyodide2024", help="the ``uv`` python platform"
     ).tag(config=True)  # type: ignore[assignment]
     uv_pip_compile_args: tuple[str] = TypedTuple(
@@ -74,10 +74,9 @@ class UvLocker(BaseLocker):
 
     @default("uv_python_version")
     def _default_uv_python_version(self) -> str | None:
-        lockfile = self.parent.pyodide_addon.output_pyodide / PYODIDE_LOCK
-        if lockfile.exists():
-            lock = json.loads(lockfile.read_text(**UTF8))
-            return f"""{lock["info"]["python"]}"""
+        lock = self.lockfile_json
+        if lock:
+            return ".".join(f"""{lock["info"]["python"]}""".split(".")[:2])
         return None
 
     # locker API
@@ -329,7 +328,7 @@ class UvLocker(BaseLocker):
             self.uv_bin,
             "pip",
             "compile",
-            f"--python-platform={self.uv_platform}",
+            f"--python-platform={self.uv_python_platform}",
             f"--output-file={self.pylock}",
             f"--constraints={self.constraints_txt}",
             f"--excludes={self.excludes_txt}",
@@ -348,3 +347,11 @@ class UvLocker(BaseLocker):
             *args,
             f"{self.requirements_in}",
         ]
+
+    @property
+    def lockfile_json(self) -> dict[str, Any] | None:
+        """Get parsed output lockfile as JSON."""
+        lockfile = self.parent.pyodide_addon.output_pyodide / PYODIDE_LOCK
+        if lockfile.exists():
+            return json.loads(lockfile.read_text(**UTF8))
+        return None

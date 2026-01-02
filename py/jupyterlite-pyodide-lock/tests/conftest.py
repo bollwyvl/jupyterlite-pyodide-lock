@@ -158,6 +158,7 @@ def pytest_configure(config: Any) -> None:
     for k in sorted([*os.environ, *C.ENV_VAR_ALL]):
         if k.startswith("JLPL_") or k.startswith("JUPYTERLITE_"):  # noqa: PIE810
             config.stash[metadata_key][k] = os.environ.get(k, "")
+
     return
 
 

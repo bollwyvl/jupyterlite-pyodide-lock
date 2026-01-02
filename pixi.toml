@@ -78,6 +78,7 @@ test = {cmd = "echo 🚀 OK test", description = """
 test-cli = {cmd = "echo 🚗 OK cli", description = """
 ├ 🆘 check CLI in all test environments""", depends-on = [
   "test-min-cli",
+  "test-min-uv-cli",
   "test-max-cli",
 ]}
 test-max = {cmd = "echo 🚗 OK test-max", description = """
@@ -92,7 +93,7 @@ test-min = {cmd = "echo 🐎 OK test-min", description = """
   "test-min-cli",
   "test-min-core",
   "test-min-wd",
-  "test-max-uv",
+  "test-uv-min-uv",
 ]}
 
 ## fragments ###################################################################
@@ -117,15 +118,16 @@ _this_python = "echo UV_PYTHON=$(python -c 'import sys; print(sys.executable)')"
 _uv = "pixi run --quiet --environment=uv uv pip"
 
 ## templates ###################################################################
-[tasks._pip_whl_all]
-args = ["env"]
+[tasks._pip_whl]
+args = [
+  "env",
+  {arg = "pkgs", default = "jupyterlite-pyodide-lock jupyterlite-pyodide-lock-uv jupyterlite-pyodide-lock-webdriver"},
+]
 cmd = """
   export $(pixi run --quiet --environment={{ env }} _this_python)
   && pixi run --environment={{ env }} _pip_check
   && pixi run --environment={{ env }} _pip_dist
-    jupyterlite-pyodide-lock
-    jupyterlite-pyodide-lock-uv
-    jupyterlite-pyodide-lock-webdriver
+    {{ pkgs }}
   && pixi run --environment={{ env }} _pip_check"""
 depends-on = ["build-pypi"]
 inputs = ["dist/*.whl"]
@@ -453,15 +455,24 @@ test-min-core = {description = "├─ test core in the min test environment", d
   {task = "_pytest_core", args = ["test-min"]},
 ]}
 test-min-pip = {description = "├─ prepare the min test environment with pip", depends-on = [
-  {task = "_pip_whl_all", args = ["test-min"]},
-]}
-test-min-uv = {description = "├─ test uv in the min test environment", depends-on = [
-  "test-min-cli",
-  {task = "_pytest_uv", args = ["test-min"]},
+  {task = "_pip_whl", args = ["test-min", "jupyterlite-pyodide-lock jupyterlite-pyodide-lock-webdriver"]},
 ]}
 test-min-wd = {description = "├─ test webdriver in the min test environment", depends-on = [
   "test-min-cli",
   {task = "_pytest_wd", args = ["test-min"]},
+]}
+
+[feature.tasks-test-uv-min.tasks]
+test-min-uv-cli = {description = "├─ smoke test browsers in min uv test environment", depends-on = [
+  "test-min-uv-pip",
+  {task = "_cli_check", args = ["test-min"]},
+]}
+test-min-uv-pip = {description = "├─ prepare the min uv test environment with pip", depends-on = [
+  {task = "_pip_whl", args = ["test-uv-min", "jupyterlite-pyodide-lock jupyterlite-pyodide-lock-uv"]},
+]}
+test-uv-min-uv = {description = "├─ test uv in the min uv test environment", depends-on = [
+  "test-min-uv-cli",
+  {task = "_pytest_uv", args = ["test-uv-min"]},
 ]}
 
 ## testing default #############################################################
@@ -475,10 +486,10 @@ test-max-core = {description = "├─ test core in the default test environment
   {task = "_pytest_core", args = ["test-max"]},
 ]}
 test-max-pip = {description = "├─ prepare the default test environment with pip", depends-on = [
-  {task = "_pip_whl_all", args = ["test-max"]},
+  {task = "_pip_whl", args = ["test-max"]},
 ]}
-test-max-uv = {description = "├─ test uv in the default test environment", depends-on = [
-  "test-max-cli",
+test-max-uv = {description = "├─ test uv in the default uv test environment", depends-on = [
+  "test-max-uv-pip",
   {task = "_pytest_uv", args = ["test-max"]},
 ]}
 test-max-wd = {description = "├─ test webdriver in the default test environment", depends-on = [
@@ -488,7 +499,7 @@ test-max-wd = {description = "├─ test webdriver in the default test environm
 
 # docs #########################################################################
 [feature.tasks-docs.tasks.docs-pip]
-depends-on = [{task = "_pip_whl_all", args = ["docs"]}]
+depends-on = [{task = "_pip_whl", args = ["docs"]}]
 description = "├ prepare the docs environment with pip"
 
 [feature.tasks-docs.tasks.docs-scour]
@@ -621,7 +632,6 @@ deps--oldest.solve-strategy = "lowest-direct"
 # singletons
 deps-flit.dependencies.flit-core = ">=3.12,<4.0"
 deps-rattler.dependencies.rattler-build = "*"
-deps-run-uv.dependencies.python-uv = ">=0.9.9"
 deps-run-wd.dependencies.selenium = ">=4.19"
 deps-uv.dependencies.uv = "*"
 
@@ -635,11 +645,20 @@ pyodide-lock-with-wheel = "*"
 python = ">=3.10"
 tornado = ">=6.1.0"
 
+[feature.deps-run-uv.dependencies]
+python-uv = ">=0.9.9"
+# first version with uv-supported --python-platform=wasm32-pyodide2024
+jupyterlite-pyodide-kernel = ">=0.7.0"
+pyodide-lock = ">=0.1.0a6,<0.2"
+
 [feature.deps-run-max.dependencies]
 jupyterlite-core = ">=0.7.0"
 jupyterlite-pyodide-kernel = ">=0.7.0"
 pyodide-lock = ">=0.1.0"
 python = "3.14.*"
+
+[feature.deps-run-min.dependencies]
+python = "3.10.*"
 
 [feature.deps-build.dependencies]
 check-wheel-contents = "*"
@@ -704,8 +723,8 @@ voici_core = ">=0.10.0"
 
 # environments #################################################################
 [environments]
-build = {features = ["deps-build", "deps-flit", "tasks-build"]}
-dev = {features = [
+build = ["deps-build", "deps-flit", "tasks-build"]
+dev = [
   "deps-build",
   "deps-demo",
   "deps-dev",
@@ -717,40 +736,50 @@ dev = {features = [
   "deps-run-uv",
   "deps-run-wd",
   "tasks-dev",
-]}
-docs = {features = [
+]
+docs = [
   "deps-build",
   "deps-check",
   "deps-demo",
   "deps-docs",
   "deps-flit",
-  "deps-run",
   "deps-run-uv",
   "deps-run-wd",
+  "deps-run",
   "tasks-check",
   "tasks-docs",
-]}
-lint = {features = ["deps-lint", "tasks-lint"]}
+]
+lint = ["deps-lint", "tasks-lint"]
 rattler = ["deps-rattler", "tasks-rattler"]
-test-max = {features = [
+test-max = [
   "deps-firefox",
   "deps-flit",
   "deps-run-max",
-  "deps-run",
-  "deps-test",
   "deps-run-uv",
   "deps-run-wd",
-  "tasks-test-repo",
+  "deps-run",
+  "deps-test",
   "tasks-test-max",
-]}
-test-min = {features = [
-  "deps--oldest",
+  "tasks-test-repo",
+]
+test-min = [
   "deps-firefox",
   "deps-flit",
+  "deps-run-wd",
   "deps-run",
   "deps-test",
-  "deps-run-uv",
-  "deps-run-wd",
   "tasks-test-min",
-]}
+  # always last
+  "deps-run-min",
+  "deps--oldest",
+]
+test-uv-min = [
+  "deps-flit",
+  "deps-run-uv",
+  "deps-run",
+  "deps-test",
+  "tasks-test-uv-min",
+  # always last
+  "deps--oldest",
+]
 uv = ["deps-uv"]

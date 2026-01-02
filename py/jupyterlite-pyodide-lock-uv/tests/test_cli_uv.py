@@ -29,6 +29,7 @@ def test_cli_good_build(lite_cli: LiteRunner, a_lite_config_with_widgets: Path) 
     patch_config(
         a_lite_config_with_widgets,
         PyodideLockAddon={
+            "specs": [ipyw],
             "patch_lock_fragment": {"packages": {wnbe: None}},
             "package_depends_remove": {ipyw: [wnbe]},
         },
