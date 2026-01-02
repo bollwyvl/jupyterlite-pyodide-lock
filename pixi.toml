@@ -753,7 +753,6 @@ lint = ["deps-lint", "tasks-lint"]
 rattler = ["deps-rattler", "tasks-rattler"]
 test-max = [
   "deps-firefox",
-  "deps-flit",
   "deps-run-max",
   "deps-run-uv",
   "deps-run-wd",
@@ -764,7 +763,6 @@ test-max = [
 ]
 test-min = [
   "deps-firefox",
-  "deps-flit",
   "deps-run-wd",
   "deps-run",
   "deps-test",
@@ -774,7 +772,7 @@ test-min = [
   "deps--oldest",
 ]
 test-uv-min = [
-  "deps-flit",
+  "deps-run-min",
   "deps-run-uv",
   "deps-run",
   "deps-test",
