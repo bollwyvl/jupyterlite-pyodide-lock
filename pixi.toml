@@ -489,7 +489,7 @@ test-max-pip = {description = "├─ prepare the default test environment with 
   {task = "_pip_whl", args = ["test-max"]},
 ]}
 test-max-uv = {description = "├─ test uv in the default uv test environment", depends-on = [
-  "test-max-uv-pip",
+  "test-max-cli",
   {task = "_pytest_uv", args = ["test-max"]},
 ]}
 test-max-wd = {description = "├─ test webdriver in the default test environment", depends-on = [
